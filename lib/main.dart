@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable
+// ignore_for_file: unused_local_variable, unnecessary_nullable_for_final_variable_declarations, prefer_interpolation_to_compose_strings, unused_label
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -22,19 +22,17 @@ class _MyAppState extends State<MyApp> {
   String result = 'results will be shown here';
 
   //TODO declare scanner
-  dynamic imageLabeler;
+  dynamic barcodeScanner;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     imagePicker = ImagePicker();
-    
+
     //TODO initialize scanner
     final List<BarcodeFormat> formats = [BarcodeFormat.all];
-    final barcodeScanner = BarcodeScanner(formats: formats);
-
-    
+    barcodeScanner = BarcodeScanner(formats: formats);
   }
 
   @override
@@ -67,17 +65,28 @@ class _MyAppState extends State<MyApp> {
   //TODO barcode scanning code here
   doBarcodeScanning() async {
     InputImage inputImage = InputImage.fromFile(_image!);
+    final List<Barcode> barcodes =
+        await barcodeScanner.processImage(inputImage);
 
+      for (Barcode barcode in barcodes) {
+      final BarcodeType type = barcode.type;
+      final Rect? boundingBox = barcode.boundingBox;
+      final String? displayValue = barcode.displayValue;
+      final String? rawValue = barcode.rawValue;
 
-    final ImageLabelerOptions options =
-        ImageLabelerOptions(confidenceThreshold: 0.5);
-    imageLabeler = ImageLabeler(options: options);
-    final List<ImageLabel> labels = await imageLabeler.processImage(inputImage);
-
-    for (ImageLabel label in labels) {
-      final String text = label.label;
-      final int index = label.index;
-      final double confidence = label.confidence;
+      //! See API reference for complete list of supported types
+      switch (type) {
+        case  BarcodeType.wifi:
+          BarcodeWifi? barcodeWifi = barcode.value as BarcodeWifi;
+          result = "Wifi: "+barcodeWifi.password!;
+          break;
+        case BarcodeType.url:
+          BarcodeUrl barcodeUrl = barcode.value as BarcodeUrl;
+          result = "Url: "+barcodeUrl.url!;
+          break;
+        default:
+          break;
+      }
     }
   }
 
